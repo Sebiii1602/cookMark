@@ -1,0 +1,35 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# PWA dev output
+dev-dist
+
+# Web-Push VAPID Private Key — niemals committen
+supabase/vapid-private-key.txt
+
+# Testmaterial: echte Captions von fremden Creatorn, wortwörtlich.
+# Lokal zum Prüfen der Extraktion unverzichtbar, aber es sind fremde Inhalte —
+# die gehören nicht in ein Repo, das öffentlich werden kann.
+supabase/functions/import/fixtures/

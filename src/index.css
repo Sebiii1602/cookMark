@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@theme {
+  /* Warmes Papier — Küchenzettel, kein Klinikweiß */
+  --color-paper: #faf8f5;
+  --color-card: #ffffff;
+  --color-line: #e9e3db;
+  --color-ink: #1f1b16;
+  --color-soft: #7a6f62;
+  --color-faint: #a89c8d;
+
+  /* Akzent: Basilikum — Knöpfe, aktive Tabs, „fertig“ */
+  --color-herb: #4e7a4a;
+  --color-herb-deep: #38603a;
+  --color-herb-soft: #e9f1e6;
+
+  /* Terracotta: Timer, „Rezept fehlt noch“, alles was Aufmerksamkeit will */
+  --color-clay: #c0714a;
+  --color-clay-deep: #96522f;
+  --color-clay-soft: #f8ece3;
+
+  /* Gedämpftes Blau: alles Geschätzte (Nährwerte) — sichtbar unsicher */
+  --color-guess: #6b87a3;
+  --color-guess-deep: #4b6a88;
+  --color-guess-soft: #e9eff4;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/*
+ * Dark Mode: dieselben Variablen, dunkel belegt. Die „deep“-Töne sind
+ * Textfarben auf den soft-Flächen und müssen im Dunkeln HELL sein.
+ * Gesetzt wird .dark per JS (src/lib/theme.ts): System / Hell / Dunkel.
+ */
+.dark {
+  --color-paper: #14120f;
+  --color-card: #1e1b18;
+  --color-line: #302b26;
+  --color-ink: #f2efea;
+  --color-soft: #a89c8d;
+  --color-faint: #7a6f62;
+
+  --color-herb: #6a9a63;
+  --color-herb-deep: #9cc796;
+  --color-herb-soft: #1c2a1c;
+
+  --color-clay: #cf8459;
+  --color-clay-deep: #e5aa82;
+  --color-clay-soft: #2c211a;
+
+  --color-guess: #7e9ab6;
+  --color-guess-deep: #a9c2d8;
+  --color-guess-soft: #1c242c;
+}
+
+html {
+  background: var(--color-paper);
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: var(--color-paper);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS Safari zoomt beim Fokus in Felder mit Schrift < 16px — deshalb nie kleiner. */
+input,
+textarea,
+select {
+  font-size: 1rem;
+}

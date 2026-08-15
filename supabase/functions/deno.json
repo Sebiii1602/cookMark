@@ -1,0 +1,8 @@
+{
+  "_kommentar": "Eigener Deno-Bereich für die Edge Functions — sonst versucht Deno, die npm-Pakete aus dem node_modules des Frontends zu ziehen.",
+  "nodeModulesDir": "none",
+  "imports": {
+    "@anthropic-ai/sdk": "npm:@anthropic-ai/sdk@^0.115.0",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@^2.110.0"
+  }
+}
