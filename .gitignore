@@ -33,3 +33,6 @@ supabase/vapid-private-key.txt
 # Lokal zum Prüfen der Extraktion unverzichtbar, aber es sind fremde Inhalte —
 # die gehören nicht in ein Repo, das öffentlich werden kann.
 supabase/functions/import/fixtures/
+
+# Arbeitsverzeichnis der Supabase-CLI
+supabase/.temp/
