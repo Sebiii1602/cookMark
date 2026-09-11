@@ -7,7 +7,7 @@ import {
   fileToImageInput,
   importTextLocally,
   ImportUnavailableError,
-  looksLikeRecipeUrl,
+  normalizeRecipeUrl,
   pollForResult,
   requestImport,
 } from '../lib/import'
@@ -61,8 +61,9 @@ export function ImportSheet({
   async function pasteFromClipboard(): Promise<void> {
     try {
       const value = await navigator.clipboard.readText()
-      if (looksLikeRecipeUrl(value)) {
-        setUrl(value.trim())
+      const link = normalizeRecipeUrl(value)
+      if (link) {
+        setUrl(link)
         setError(null)
       } else {
         setError('In der Zwischenablage steht kein Link.')
@@ -77,8 +78,11 @@ export function ImportSheet({
     setError(null)
     try {
       if (mode === 'link') {
-        if (!looksLikeRecipeUrl(url)) throw new Error('Das sieht nicht nach einem Link aus.')
-        await requestImport({ url: url.trim() })
+        // Normalisiert, nicht nur geprueft: der Server bekommt die Adresse
+        // samt Schema, auch wenn sie ohne eingefuegt wurde.
+        const link = normalizeRecipeUrl(url)
+        if (!link) throw new Error('Das sieht nicht nach einem Link aus.')
+        await requestImport({ url: link })
       } else if (mode === 'text') {
         if (text.trim().length < 20) throw new Error('Der Text ist zu kurz für ein Rezept.')
         // Ohne Supabase, aber mit Groq-Schlüssel: das geht hier im Browser,

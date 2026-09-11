@@ -21,6 +21,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { fetchSource, type SourceResult } from '../_shared/sources.ts'
 import { extractRecipe, MODEL, RefusalError, type ImageInput } from './extract.ts'
+import { extractWithGroq } from '../_shared/groq.ts'
 import type { Ingredient, Recipe, SourceType, Step } from '../_shared/recipe-core.ts'
 
 const CORS = {
@@ -219,9 +220,23 @@ async function process(
       return
     }
 
-    // 3. Claude: aus Caption, Screenshot oder eingefügtem Text ein Rezept machen
-    const apiKey = env('ANTHROPIC_API_KEY')
-    if (!apiKey) throw new Error('ANTHROPIC_API_KEY ist nicht gesetzt.')
+    // 3. KI: aus Caption, Screenshot oder eingefügtem Text ein Rezept machen.
+    //
+    // Groq zuerst, weil kostenlos — aber `openai/gpt-oss-120b` liest keine
+    // Bilder. Sobald ein Screenshot dabei ist, führt kein Weg an Claude vorbei.
+    // Beide Wege benutzen dieselben Regeln und dieselbe Nachbearbeitung aus
+    // `_shared/extraction.ts`, damit derselbe Post nicht je nach Anbieter etwas
+    // anderes ergibt.
+    const groqKey = env('GROQ_API_KEY')
+    const anthropicKey = env('ANTHROPIC_API_KEY')
+    const needsVision = images.length > 0
+
+    if (needsVision && !anthropicKey) {
+      throw new Error('Für Screenshots braucht es ANTHROPIC_API_KEY — Groq liest keine Bilder.')
+    }
+    if (!needsVision && !groqKey && !anthropicKey) {
+      throw new Error('Weder GROQ_API_KEY noch ANTHROPIC_API_KEY ist gesetzt.')
+    }
 
     const context = [
       source.sourceType !== 'text' ? source.sourceType : null,
@@ -230,12 +245,19 @@ async function process(
       .filter(Boolean)
       .join(' ')
 
-    const extracted = await extractRecipe({
-      apiKey,
-      text: source.text,
-      images,
-      context: context || undefined,
-    })
+    const useGroq = !needsVision && groqKey !== ''
+    const extracted = useGroq
+      ? await extractWithGroq({
+          apiKey: groqKey,
+          text: source.text,
+          context: context || undefined,
+        })
+      : await extractRecipe({
+          apiKey: anthropicKey,
+          text: source.text,
+          images,
+          context: context || undefined,
+        })
 
     const hasRecipe = extracted !== null
     const row = buildRecipeRow({

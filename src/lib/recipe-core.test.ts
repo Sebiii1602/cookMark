@@ -7,6 +7,7 @@ import {
   guessAisle,
   guessTimerSeconds,
   normalizeName,
+  normalizeRecipeUrl,
   parseIngredientLine,
   parseLeadingAmount,
   roundNice,
@@ -288,5 +289,35 @@ describe('guessAisle', () => {
 
   it('gibt zu, wenn es nicht passt', () => {
     expect(guessAisle('einhornstaub')).toBe('sonstiges')
+  })
+})
+
+describe('normalizeRecipeUrl', () => {
+  it('ergaenzt ein fehlendes https:// — Safari laesst es beim Kopieren weg', () => {
+    expect(normalizeRecipeUrl('www.instagram.com/reels/DdHZlGKT2Hk')).toBe(
+      'https://www.instagram.com/reels/DdHZlGKT2Hk',
+    )
+    expect(normalizeRecipeUrl('instagram.com/p/ABC123')).toBe('https://instagram.com/p/ABC123')
+  })
+
+  it('laesst vollstaendige Adressen unveraendert', () => {
+    expect(normalizeRecipeUrl('https://www.tiktok.com/@koch/video/123')).toBe(
+      'https://www.tiktok.com/@koch/video/123',
+    )
+  })
+
+  it('raeumt Leerzeichen am Rand weg', () => {
+    expect(normalizeRecipeUrl('  instagram.com/reel/XY  ')).toBe('https://instagram.com/reel/XY')
+  })
+
+  it('erkennt eingefuegten Rezepttext als das, was er ist: kein Link', () => {
+    expect(normalizeRecipeUrl('200 g Mehl\n1 Ei')).toBeNull()
+    expect(normalizeRecipeUrl('Sommerlicher Thunfisch-Salat')).toBeNull()
+  })
+
+  it('lehnt ab, was kein Server sein kann', () => {
+    expect(normalizeRecipeUrl('Zutaten')).toBeNull()
+    expect(normalizeRecipeUrl('')).toBeNull()
+    expect(normalizeRecipeUrl('javascript:alert(1)')).toBeNull()
   })
 })

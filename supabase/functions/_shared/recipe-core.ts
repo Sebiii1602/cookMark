@@ -636,3 +636,32 @@ export function toStep(text: string, group: string | null = null): Step {
   const clean = text.replace(/^[\s*•\-–—]+/, '').replace(/^\d+[.)]\s*/, '').trim()
   return { text: clean, timer_seconds: guessTimerSeconds(clean), group }
 }
+
+// ---------------------------------------------------------------- Quell-Link
+
+/**
+ * Räumt eine eingefügte Adresse auf und gibt sie vollständig zurück — oder
+ * `null`, wenn das kein Link ist.
+ *
+ * Auf `https://` zu bestehen wäre Schikane: Safari lässt es beim Kopieren aus
+ * der Adressleiste weg, Instagram teilt mal mit und mal ohne, und für den
+ * Benutzer sieht die Ablehnung danach aus wie ein Fehler der App.
+ */
+export function normalizeRecipeUrl(value: string): string | null {
+  const trimmed = value.trim()
+  // Leerzeichen heißt: das ist eingefügter Text, kein Link.
+  if (!trimmed || /\s/.test(trimmed)) return null
+
+  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+  let parsed: URL
+  try {
+    parsed = new URL(withScheme)
+  } catch {
+    return null
+  }
+  // Alles außer http(s) ist hier nichts zu holen — und `javascript:` schon gar nicht.
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null
+  // Ein Hostname ohne Punkt ist kein Server, sondern ein Tippfehler.
+  if (!/^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i.test(parsed.hostname)) return null
+  return parsed.toString()
+}

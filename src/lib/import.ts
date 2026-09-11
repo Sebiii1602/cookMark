@@ -1,4 +1,5 @@
 import { extractWithGroq } from '@core/groq.ts'
+import { normalizeRecipeUrl } from '@core/recipe-core.ts'
 import { addRecipe } from './db'
 import { functionsUrl, supabase } from './supabase'
 import { syncNow } from './sync'
@@ -115,11 +116,10 @@ export function pollForResult(onDone?: () => void): () => void {
 
 /** Erkennt, ob in der Zwischenablage etwas steht, das nach einem Rezept-Link aussieht. */
 export function looksLikeRecipeUrl(value: string): boolean {
-  const trimmed = value.trim()
-  if (!/^https?:\/\//i.test(trimmed)) return false
-  if (/\s/.test(trimmed)) return false
-  return true
+  return normalizeRecipeUrl(value) !== null
 }
+
+export { normalizeRecipeUrl }
 
 /**
  * Bild aus dem Dateidialog in base64 — und dabei auf eine vernünftige Größe
