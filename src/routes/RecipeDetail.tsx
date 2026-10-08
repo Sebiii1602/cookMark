@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { activeVersion, bySection, originalVersion, type RecipeVersion } from '@core/recipe-core.ts'
+import {
+  activeVersion,
+  bySection,
+  missingParts,
+  originalVersion,
+  type RecipeVersion,
+} from '@core/recipe-core.ts'
 import { CookLogSheet } from '../components/CookLogSheet'
 import { FilePick } from '../components/FilePick'
 import { IngredientList } from '../components/IngredientList'
@@ -114,7 +120,10 @@ export function RecipeDetail() {
   const hasVariant = recipe.variant !== null
   const showingVariant = hasVariant && tab === 'variant'
   const version: RecipeVersion = showingVariant ? activeVersion(recipe) : originalVersion(recipe)
-  const needsRecipe = recipe.status === 'needs_recipe'
+  // Abgeleitet statt am Status abgelesen: lecocque.com etwa liefert Zutaten,
+  // laesst die Zubereitung aber leer — das galt bisher als fertiges Rezept.
+  const missing = missingParts(recipe)
+  const incomplete = missing.length > 0
   /**
    * In die eigene Fassung schreiben lohnt nur, wenn es ein Original gibt, das
    * geschont werden will. Bei selbst angelegten Rezepten und bei Karten, in
@@ -123,7 +132,8 @@ export function RecipeDetail() {
    */
   const editsOriginal =
     recipe.source_type === 'manual' ||
-    (recipe.ingredients.length === 0 && recipe.steps.length === 0)
+    recipe.ingredients.length === 0 ||
+    recipe.steps.length === 0
 
   async function toShoppingList(): Promise<void> {
     const count = await addIngredientsToList(version.ingredients, id, factor)
@@ -175,14 +185,32 @@ export function RecipeDetail() {
           </a>
         )}
 
-        {needsRecipe && (
+        {incomplete && (
           <Card className="mt-4 border-clay/40 bg-clay-soft">
-            <p className="text-sm font-medium text-clay-deep">Im Post stand kein Rezept.</p>
-            <p className="mt-1 text-sm text-clay-deep/90">
-              Bild, Link und Creator sind gespeichert — die Zutaten nicht, weil sie nirgends
-              standen. Schick einen Screenshot nach oder trag sie von Hand ein.
+            <p className="text-sm font-medium text-clay-deep">
+              {missing.length === 2
+                ? 'Im Post stand kein Rezept.'
+                : missing[0] === 'steps'
+                  ? 'Die Zubereitung fehlt.'
+                  : 'Die Zutaten fehlen.'}
             </p>
-            <div className="mt-3">
+            <p className="mt-1 text-sm text-clay-deep/90">
+              {missing.length === 2
+                ? 'Bild, Link und Creator sind gespeichert — mehr stand nicht da.'
+                : 'Die Quelle hat diesen Teil nicht veröffentlicht. Dazuerfunden wird hier nichts.'}{' '}
+              Trag ihn von Hand ein oder schick einen Screenshot nach.
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => setEditing(editsOriginal ? 'original' : 'variant')}
+              >
+                {missing.length === 2
+                  ? 'Rezept eintragen'
+                  : missing[0] === 'steps'
+                    ? 'Zubereitung eintragen'
+                    : 'Zutaten eintragen'}
+              </Button>
               <FilePick tone="clay" disabled={uploading} onPick={(file) => void addScreenshot(file)}>
                 Screenshot auswählen
               </FilePick>
@@ -361,7 +389,7 @@ export function RecipeDetail() {
               onClick={() => setEditing(editsOriginal ? 'original' : 'variant')}
               full
             >
-              {needsRecipe
+              {incomplete
                 ? 'Rezept eintragen'
                 : editsOriginal
                   ? 'Bearbeiten'

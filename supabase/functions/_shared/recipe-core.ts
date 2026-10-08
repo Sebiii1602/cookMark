@@ -665,3 +665,40 @@ export function normalizeRecipeUrl(value: string): string | null {
   if (!/^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i.test(parsed.hostname)) return null
   return parsed.toString()
 }
+
+// ------------------------------------------------------------ Vollständigkeit
+
+export type MissingPart = 'ingredients' | 'steps'
+
+/**
+ * Was fehlt diesem Rezept, um kochbar zu sein?
+ *
+ * Wird gebraucht, weil Quellen gern nur die Hälfte hergeben: lecocque.com etwa
+ * veröffentlicht in seinen strukturierten Daten die Zutaten, lässt
+ * `recipeInstructions` aber leer. Das Ergebnis sieht dann aus wie ein fertiges
+ * Rezept und ist beim Kochen wertlos.
+ *
+ * Bewusst abgeleitet statt gespeichert: sobald du die Schritte von Hand
+ * nachträgst, stimmt die Antwort von selbst, ohne dass irgendwo ein Status
+ * nachgeführt werden muss. Gilt für die Fassung, mit der du arbeitest.
+ */
+export function missingParts(recipe: Recipe): MissingPart[] {
+  const version = activeVersion(recipe)
+  const missing: MissingPart[] = []
+  if (version.ingredients.length === 0) missing.push('ingredients')
+  if (version.steps.length === 0) missing.push('steps')
+  return missing
+}
+
+/** Kurzform für „da fehlt nichts mehr“. */
+export function isCookable(recipe: Recipe): boolean {
+  return missingParts(recipe).length === 0
+}
+
+/** „Zutaten und Zubereitung fehlen“ — fertig zum Anzeigen. */
+export function missingLabel(missing: MissingPart[]): string {
+  if (missing.length === 2) return 'Zutaten und Zubereitung fehlen'
+  if (missing[0] === 'ingredients') return 'Zutaten fehlen'
+  if (missing[0] === 'steps') return 'Zubereitung fehlt'
+  return ''
+}

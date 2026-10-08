@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { activeVersion } from '@core/recipe-core.ts'
+import { activeVersion, missingLabel, missingParts } from '@core/recipe-core.ts'
 import { fmtMinutes } from '../lib/dates'
 import { useImageUrl } from '../lib/images'
 import type { Recipe } from '../lib/types'
@@ -15,14 +15,19 @@ const SOURCE_LABEL: Record<Recipe['source_type'], string> = {
 
 export function RecipeCard({ recipe, lastCooked }: { recipe: Recipe; lastCooked?: string }) {
   const imageUrl = useImageUrl(recipe.image_path)
-  const needsRecipe = recipe.status === 'needs_recipe'
+  // Abgeleitet statt am Status abgelesen: manche Quellen liefern Zutaten ohne
+  // Zubereitung und galten damit bisher als fertig.
+  const missing = missingParts(recipe)
+  const incomplete = missing.length > 0
   // Wenn du eine eigene Fassung hast, gilt in der Liste deine Zeit, nicht die der Quelle
   const minutes = activeVersion(recipe).total_minutes
 
   return (
     <Link
       to={`/rezept/${recipe.id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-line bg-card shadow-sm transition-colors hover:border-herb"
+      className={`group flex flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition-colors ${
+        incomplete ? 'border-clay hover:border-clay-deep' : 'border-line hover:border-herb'
+      }`}
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-paper">
         {imageUrl ? (
@@ -34,12 +39,12 @@ export function RecipeCard({ recipe, lastCooked }: { recipe: Recipe; lastCooked?
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-2xl text-faint">
-            {needsRecipe ? '📎' : '🍳'}
+            {incomplete ? '📎' : '🍳'}
           </div>
         )}
-        {needsRecipe && (
+        {incomplete && (
           <span className="absolute left-2 top-2 rounded-full bg-clay px-2 py-0.5 text-[11px] font-medium text-white shadow-sm">
-            Rezept fehlt
+            {missingLabel(missing)}
           </span>
         )}
       </div>

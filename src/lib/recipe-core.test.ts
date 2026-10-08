@@ -6,6 +6,9 @@ import {
   formatQty,
   guessAisle,
   guessTimerSeconds,
+  isCookable,
+  missingLabel,
+  missingParts,
   normalizeName,
   normalizeRecipeUrl,
   parseIngredientLine,
@@ -15,6 +18,7 @@ import {
   stripDecoration,
   toMetric,
   toStep,
+  type Recipe,
 } from '@core/recipe-core.ts'
 
 describe('parseLeadingAmount', () => {
@@ -319,5 +323,47 @@ describe('normalizeRecipeUrl', () => {
     expect(normalizeRecipeUrl('Zutaten')).toBeNull()
     expect(normalizeRecipeUrl('')).toBeNull()
     expect(normalizeRecipeUrl('javascript:alert(1)')).toBeNull()
+  })
+})
+
+describe('missingParts', () => {
+  const base = (over: Partial<Recipe>): Recipe =>
+    ({
+      id: 'r', title: 'T', source_type: 'web', source_url: null, source_author: null,
+      image_path: null, servings: null, total_minutes: null, status: 'complete', lang: null,
+      raw_text: null, ingredients: [], steps: [], tags: [], nutrition: null, variant: null,
+      created_at: '', updated_at: '', ...over,
+    }) as Recipe
+
+  const zutat = parseIngredientLine('200 g Mehl')
+  const schritt = toStep('Alles verruehren.')
+
+  it('meldet beides, wenn gar nichts da ist', () => {
+    expect(missingParts(base({}))).toEqual(['ingredients', 'steps'])
+  })
+
+  it('erkennt den lecocque-Fall: Zutaten da, Zubereitung leer', () => {
+    expect(missingParts(base({ ingredients: [zutat] }))).toEqual(['steps'])
+  })
+
+  it('meldet nichts bei einem vollstaendigen Rezept', () => {
+    expect(missingParts(base({ ingredients: [zutat], steps: [schritt] }))).toEqual([])
+    expect(isCookable(base({ ingredients: [zutat], steps: [schritt] }))).toBe(true)
+  })
+
+  it('richtet sich nach der eigenen Fassung, wenn es eine gibt', () => {
+    // Original unvollstaendig, eigene Version vollstaendig -> nichts fehlt
+    const r = base({
+      ingredients: [zutat],
+      steps: [],
+      variant: { servings: null, total_minutes: null, ingredients: [zutat], steps: [schritt], note: null, updated_at: '' },
+    })
+    expect(missingParts(r)).toEqual([])
+  })
+
+  it('formuliert den Hinweis lesbar', () => {
+    expect(missingLabel(['ingredients', 'steps'])).toBe('Zutaten und Zubereitung fehlen')
+    expect(missingLabel(['steps'])).toBe('Zubereitung fehlt')
+    expect(missingLabel([])).toBe('')
   })
 })

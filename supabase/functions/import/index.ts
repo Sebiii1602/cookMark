@@ -180,7 +180,11 @@ async function process(
         ingredients: s.ingredients,
         steps: s.steps,
         tags: [],
-        status: 'complete',
+        // Nicht blind 'complete': manche Seiten veroeffentlichen zwar Zutaten,
+        // lassen recipeInstructions in ihren strukturierten Daten aber leer
+        // (lecocque.com zum Beispiel). Das sah bisher aus wie ein fertiges
+        // Rezept und war beim Kochen wertlos.
+        status: s.ingredients.length > 0 && s.steps.length > 0 ? 'complete' : 'needs_recipe',
       })
       const { error } = await admin.from('recipes').upsert(row, { onConflict: 'id' })
       if (error) throw error
@@ -188,7 +192,10 @@ async function process(
         const path = await copyImage(admin, userId, recipeId, s.imageUrl)
         if (path) await admin.from('recipes').update({ image_path: path, updated_at: new Date().toISOString() }).eq('id', recipeId)
       }
-      await touch({ status: 'done', recipe_id: recipeId })
+      await touch({
+        status: s.ingredients.length > 0 && s.steps.length > 0 ? 'done' : 'needs_input',
+        recipe_id: recipeId,
+      })
       return
     }
 
